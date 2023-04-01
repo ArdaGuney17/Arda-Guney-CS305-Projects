@@ -1,0 +1,288 @@
+	int num_newline=1;
+tCOMMA ,
+tEQUALITY "\"==\""
+tPLUS "\"+\""
+tMINUS "\"-\""
+tMUL "\"*\""
+tDIV "\"/\""
+tINC "\"++\"" 
+tDEC "\"--\""
+tLBRAC \[
+tRBRAC \]
+tGT "\">\""
+tLT "\"<\""
+tGEQ "\">=\""
+tLEQ "\"<=\""
+tGET "\"Get\""
+tSET "\"Set\""
+tFUNCTION "\"Function\""
+tPRINT "\"Print\""
+tFOR "\"For\""
+tIF "\"If\""
+tRETURN "\"Return\""
+tIDENT \"[A-Za-z_][A-Za-z0-9_]*\"
+tNUM [+-]?([0-9]*[.])?[0-9]+
+tSTRING \'[^']*\'
+tILLEGAL .
+	#include <stdio.h>
+	#include <string.h>
+	#include <stdlib.h>
+	char *substr(char *str, int start, int len) {
+    char *sub = malloc((len + 1) * sizeof(char));
+    strncpy(sub, str + start, len);
+    sub[len] = '\0';
+    return sub;
+	}
+%%
+" "
+\t
+\n num_newline++;
+{tCOMMA} printf("%d %s\n", num_newline, "tCOMMA");
+{tEQUALITY} printf("%d %s\n", num_newline, "tEQUALITY");
+{tPLUS} printf("%d %s\n", num_newline, "tPLUS");
+{tMINUS} printf("%d %s\n", num_newline, "tMINUS");
+{tMUL} printf("%d %s\n", num_newline, "tMUL");
+{tDIV} printf("%d %s\n", num_newline, "tDIV");
+{tINC} printf("%d %s\n", num_newline, "tINC");
+{tDEC} printf("%d %s\n", num_newline, "tDEC");
+{tLBRAC} printf("%d %s\n", num_newline, "tLBRAC");
+{tRBRAC} printf("%d %s\n", num_newline, "tRBRAC");
+{tGT} printf("%d %s\n", num_newline, "tGT");
+{tLT} printf("%d %s\n", num_newline, "tLT");
+{tGEQ} printf("%d %s\n", num_newline, "tGEQ");
+{tLEQ} printf("%d %s\n", num_newline, "tLEQ");
+{tGET} printf("%d %s\n", num_newline, "tGET");
+{tSET} printf("%d %s\n", num_newline, "tSET");
+{tFUNCTION} printf("%d %s\n", num_newline, "tFUNCTION");
+{tPRINT} printf("%d %s\n", num_newline, "tPRINT");
+{tFOR} printf("%d %s\n", num_newline, "tFOR");
+{tIF} printf("%d %s\n", num_newline, "tIF");
+{tRETURN} printf("%d %s\n", num_newline, "tRETURN");
+{tIDENT} {printf("%d %s", num_newline, "tIDENT ");
+char *sub = substr(yytext, 1, strlen(yytext)-2);
+printf("(%s)\n", sub);}
+{tNUM} {printf("%d %s", num_newline, "tNUM ");
+printf("(%s) ", yytext);
+
+int zero_idx_beg = 0;
+int zero_cntr = 0;
+int dot_cntr = 0;
+int other_cntr = 0;
+int dot_idx = 0;
+int keep = 0;
+int lfounder = 0;
+
+if(yytext[0] == '-'){
+   for (int a = 1; a < strlen(yytext); a++) {
+    if (yytext[a] == '.'){
+        dot_idx = a;
+        a = strlen(yytext);
+        } 
+    }
+    for (int b = 1; b < strlen(yytext); b++) {
+    if (yytext[b] == '0') {
+        zero_cntr++;
+    }
+    else if (yytext[b] == '.'){
+        dot_cntr++;
+    }
+    else{
+        other_cntr++;
+    }
+    }
+    if (zero_cntr != 0 && dot_cntr != 0 && other_cntr == 0){
+    printf("(-%s)\n", "0.0");
+    keep = 1;
+    }
+    
+    if (zero_cntr != 0 && dot_cntr == 0 && other_cntr == 0){
+    printf("(-%s)\n", "0");
+    keep = 1;    
+    }
+
+    for (int c = 1; c < strlen(yytext); c++) {
+        if (yytext[c] != '0') {
+            zero_idx_beg = c;
+            c = strlen(yytext);
+    }
+    }
+    int zero_idx_end = strlen(yytext)-1;
+
+    for (int d = strlen(yytext)-1; d > 0; d--) {
+        if (yytext[d] != '0') {
+            zero_idx_end = d;
+            d = 0;
+        }}
+    if (keep != 1  && dot_idx != 0){
+    zero_cntr = 0;
+    dot_cntr = 0;
+    other_cntr = 0;
+    for (int e = 1; e < dot_idx; e++) {
+        if (yytext[e] != '0') {
+            other_cntr++;
+            e = dot_idx;
+        }
+    }
+    
+    int dot_start = ((zero_idx_end) - (dot_idx) + 1); 
+    
+    if (other_cntr == 0){
+        char *sub = substr(yytext, dot_idx, dot_start); 
+        printf("(-0%s)\n", sub);
+        keep = 2;
+        free(sub);
+    }
+    }
+    int sub_len = (((zero_idx_end)-(zero_idx_beg))+2);
+    int dot_beg = (dot_idx+1);
+    
+    for (int l = dot_beg; l < strlen(yytext); l++) {
+        if (yytext[l] != '0') {
+            lfounder = 1;
+            l = strlen(yytext);
+        }
+    }
+    
+    if (keep != 1 && keep != 2 && lfounder == 0 && dot_idx != 0){
+      char *sub = substr(yytext, zero_idx_beg, dot_idx-zero_idx_beg+1);
+      printf("(-%s0)\n", sub);
+      keep = 3;
+    }
+
+    if (keep != 1 && keep != 2 && keep != 3 && dot_idx != 0){
+      char *sub = substr(yytext, zero_idx_beg, zero_idx_end - zero_idx_beg+1); 
+      printf("(-%s)\n", sub);
+      free(sub);  
+      keep = 4;
+    }
+    
+    
+    if (yytext[0]== '-' && yytext[1]== '0' && strlen(yytext) == 2){
+        printf("(%s)\n", yytext);
+        keep = 3;
+    }
+    if (keep != 1 && keep != 2 && keep != 3 && keep != 4){
+    char *sub = substr(yytext, zero_idx_beg, strlen(yytext));
+    printf("(-%s)\n", sub);
+    free(sub); 
+    }
+    
+}
+
+
+else{
+    for (int a = 0; a < strlen(yytext); a++) {
+        if (yytext[a] == '.'){
+            dot_idx = a;
+            a = strlen(yytext);
+            
+        } 
+    }
+    
+    for (int b = 0; b < strlen(yytext); b++) {
+        if (yytext[b] == '0') {
+            zero_cntr++;
+        }
+        else if (yytext[b] == '.'){
+            dot_cntr++;
+        }
+        else{
+            other_cntr++;
+        }
+    }
+    
+    if (zero_cntr != 0 && dot_cntr != 0 && other_cntr == 0){
+        printf("(%s)\n", "0.0");
+        keep = 1;
+    }
+    
+    if (zero_cntr != 0 && dot_cntr == 0 && other_cntr == 0){
+    printf("(%s)\n", "0");
+    keep = 1;
+    }
+    
+    for (int c = 0; c < strlen(yytext); c++) {
+        if (yytext[c] != '0') {
+            zero_idx_beg = c;
+            c = strlen(yytext);
+        }}
+    
+    int zero_idx_end = strlen(yytext)-1;
+    
+    for (int d = strlen(yytext)-1; d > 0; d--) {
+        if (yytext[d] != '0') {
+            zero_idx_end = d;
+            d = 0;
+        }}
+        
+    if (keep != 1  && dot_idx != 0){
+        zero_cntr = 0;
+        dot_cntr = 0;
+        other_cntr = 0;
+        for (int e = 0; e < dot_idx; e++) {
+            if (yytext[e] != '0') {
+                other_cntr++;
+                e = dot_idx;
+            }
+        }
+        
+        int dot_start = ((zero_idx_end) - (dot_idx) + 1); 
+        
+        if (other_cntr == 0){
+            char *sub = substr(yytext, dot_idx, dot_start); 
+            printf("(0%s)\n", sub);
+            keep = 2;
+            free(sub);
+        }
+    }
+    
+    int sub_len = (((zero_idx_end)-(zero_idx_beg))+2);
+    int dot_beg = (dot_idx+1);
+    
+    for (int l = dot_beg; l < strlen(yytext); l++) {
+        if (yytext[l] != '0') {
+            lfounder = 1;
+            l = strlen(yytext);
+        }
+    }
+    
+    if (keep != 1 && keep != 2 && lfounder == 0 && dot_idx != 0){
+      char *sub = substr(yytext, zero_idx_beg, dot_idx-zero_idx_beg+1);
+      printf("(%s0)\n", sub);
+      keep = 3;
+    }
+    
+    if (keep != 1 && keep != 2 && keep != 3 && dot_idx != 0){
+      char *sub = substr(yytext, zero_idx_beg, zero_idx_end - zero_idx_beg+1); 
+      printf("(%s)\n", sub);
+      free(sub);  
+      keep = 4;
+    }
+    
+    if (yytext[0]== '-' && yytext[1]== '0' && strlen(yytext) == 2){
+        printf("(%s)\n", yytext);
+        keep = 3;
+    }
+    
+    if (keep != 1 && keep != 2 && keep != 3 && keep != 4){
+    char *sub = substr(yytext, zero_idx_beg, strlen(yytext));
+    printf("(%s)\n", sub);
+    free(sub); 
+    }
+}
+}
+{tSTRING} {printf("%d %s", num_newline, "tSTRING ");
+for(int f = 0; f < strlen(yytext); f++){
+if(yytext[f] == '\n'){
+num_newline++;}}
+char *sub = substr(yytext, 1, strlen(yytext)-2);
+printf("(%s)\n", sub);
+}
+{tILLEGAL} {printf("%d %s", num_newline, "ILLEGAL CHARACTER "); 
+printf("(%s)\n", yytext);
+}
+%%
+int main() {
+    yylex();
+    return 0;
+}
